@@ -36,7 +36,7 @@ def draw ():
     pygame.display.flip ()
 
 def process_input ():
-    global paused, judges
+    global paused, judges, score, word
 
     for event in pygame.event.get ():
         if event.type == pygame.QUIT:
@@ -50,6 +50,8 @@ def process_input ():
             if event.key == pygame.K_p:
                 paused ^= True
             elif event.key == pygame.K_SPACE:
+                print "skipped: " + word
+                score["skipped"] += 1
                 next_word ()
             elif event.key == pygame.K_LEFT:
                 judges[0] ^= 1
@@ -57,6 +59,12 @@ def process_input ():
                 judges[1] ^= 1
             elif event.key == pygame.K_RIGHT:
                 judges[2] ^= 1
+            elif event.key == pygame.K_DOWN:
+                end_round ()
+            elif event.key == pygame.K_y:
+                print "won: " + word
+                score["won"] += 1
+                next_word ()
 
 def fetch_word ():
     global nouns
@@ -66,12 +74,14 @@ def fetch_word ():
     return nouns[idx]
         
 def next_word ():
-    global judging, text, round_start, xpos, ypos, judges, stext, vlla_xpos
+    global judging, text, round_start, xpos, ypos, judges, stext, vlla_xpos, \
+        word
 
     judging = False
     judges = [0, 0, 0]
     round_start = time.time ()
     word = fetch_word ()
+    print word
     text = font.render (word, 0, (255, 255, 255))
     stext = sfont.render (word.upper (), 0, (255, 255, 255))
 
@@ -82,6 +92,26 @@ def next_word ():
     else:
         xpos = (WIDTH / 2) - (text.get_width () / 2)
         ypos = (HEIGHT / 2) - (text.get_height() / 2)
+
+def check_end ():
+    global judges, buzzer, ended, end_time, score, word
+
+    if judges[0] == 1 and judges[1] == 1 and judges[2] == 1:
+        buzzer.play ()
+        ended = True
+        end_time = time.time ()
+        score["disqual"] += 1
+        print "disqualled: " + word
+
+def end_round ():
+    global judges, ended, score
+
+    judges = [0, 0, 0]
+    ended = False
+
+    print score
+
+    score = {"skipped": 0, "disqual": 0, "won": 0}
 
 f = open ("nouns", "r")
 contents = f.read ()
@@ -94,6 +124,8 @@ for l in lines:
 pygame.init ()
 screen = pygame.display.set_mode ((WIDTH, HEIGHT))
 pygame.display.set_caption ("technobabble taboo")
+
+buzzer = pygame.mixer.Sound ("buzzer.wav")
 
 fps = 60
 framestep = 1.0 / fps
@@ -116,6 +148,7 @@ judging = False
 feedfile = "feed.png"
 
 judges = [0, 0, 0]
+score = {"skipped": 0, "disqual": 0, "won": 0}
 
 redx = pygame.image.load ("x.png")
 
@@ -123,6 +156,7 @@ next_word ()
 round_start = time.time ()
 
 vlla = pygame.Surface ((60, 26))
+ended = False
 
 while True:
     t = framestep - (time.time () - last_time)
@@ -154,6 +188,13 @@ while True:
     process_input ()
 
     draw ()
+
+    if not ended:
+        check_end ()
+    else:
+        if now - end_time > 3:
+            ended = False
+            next_word ()
 
     if os.path.getatime (feedfile) > os.path.getmtime (feedfile):
         pygame.image.save (vlla, feedfile)
