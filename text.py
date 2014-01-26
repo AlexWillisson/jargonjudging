@@ -73,7 +73,7 @@ def next_word ():
     round_start = time.time ()
     word = fetch_word ()
     text = font.render (word, 0, (255, 255, 255))
-    stext = sfont.render (word, 0, (255, 255, 255))
+    stext = sfont.render (word.upper (), 0, (255, 255, 255))
 
     vlla_xpos = 60
     if SCROLL:

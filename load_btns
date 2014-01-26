@@ -1,0 +1,10 @@
+#! /bin/sh
+
+ID=`xinput list | sed -n 's/.*USB.*id=\([0-9]*\).*keyboard.*/\1/p'`
+
+for i in $ID
+do
+    xinput disable $i
+done
+
+btns
