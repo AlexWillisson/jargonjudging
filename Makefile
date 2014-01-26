@@ -1,4 +1,8 @@
-JC = processing-java
+PROCESSING = processing-java
 
 judging: jargon.pde
-	$(JC) --sketch=`pwd` --output=judging --run --force
+	$(PROCESSING) --sketch=`pwd` --output=judging --run --force
+
+.PHONY:
+run:
+	$(PROCESSING) --sketch=`pwd` --output=judging --run --force
