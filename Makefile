@@ -6,3 +6,6 @@ judging: jargon.pde
 .PHONY:
 run:
 	$(PROCESSING) --sketch=`pwd` --output=judging --run --force
+
+clean:
+	rm -f *~

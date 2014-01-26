@@ -2,7 +2,7 @@
 
 import pygame, time, sys, random, os
 
-if True:
+if False:
     SCALE = 1
     WIDTH = 60
     HEIGHT = 26
@@ -16,9 +16,11 @@ else:
     SCROLL = False
 
 def draw ():
-    global text, xpos, ypos, judging, judges, redx, SCALE
+    global text, xpos, ypos, judging, judges, redx, SCALE, screen, vlla, stext 
+    vlla_xpos
 
     screen.fill ((0, 0, 0))
+    vlla.fill ((0, 0, 0))
 
     if judging:
         for idx in range (len (judges)):
@@ -26,8 +28,10 @@ def draw ():
                 screen.blit (pygame.transform.scale (redx,
                                                      (20 * SCALE, 26 * SCALE)),
                              (idx * 20 * SCALE, 0))
+                vlla.blit (redx, (idx * 20, 0))
     else:
         screen.blit (text, (xpos, ypos))
+        vlla.blit (stext, (vlla_xpos, 0))
 
     pygame.display.flip ()
 
@@ -62,13 +66,16 @@ def fetch_word ():
     return nouns[idx]
         
 def next_word ():
-    global judging, text, round_start, xpos, ypos, judges
+    global judging, text, round_start, xpos, ypos, judges, stext, vlla_xpos
 
     judging = False
     judges = [0, 0, 0]
     round_start = time.time ()
-    text = font.render (fetch_word (), 0, (255, 255, 255))
+    word = fetch_word ()
+    text = font.render (word, 0, (255, 255, 255))
+    stext = sfont.render (word, 0, (255, 255, 255))
 
+    vlla_xpos = 60
     if SCROLL:
         xpos = WIDTH
         ypos = (HEIGHT / 2) - (text.get_height() / 2)
@@ -97,10 +104,13 @@ paused = True
 
 font = pygame.font.Font ("/usr/share/fonts/opentype/freefont/FreeSansBold.otf",
                          FONTSIZE)
+sfont = pygame.font.Font ("/usr/share/fonts/opentype/freefont/FreeSansBold.otf",
+                          26)
 xpos = WIDTH
 ypos = HEIGHT / 2
 
 scroll_rate = 100 * (WIDTH / 60)
+vlla_scroll_rate = 100
 repeat = 0
 judging = False
 feedfile = "feed.png"
@@ -112,6 +122,8 @@ redx = pygame.image.load ("x.png")
 next_word ()
 round_start = time.time ()
 
+vlla = pygame.Surface ((60, 26))
+
 while True:
     t = framestep - (time.time () - last_time)
     if t > 0:
@@ -122,26 +134,28 @@ while True:
     dt = now - last_time
 
     if not judging:
+        vlla_xpos -= vlla_scroll_rate * dt
+
+        if vlla_xpos + stext.get_width () < 0:
+            if repeat == 0:
+                vlla_xpos = 60
+                repeat = 1
+            else:
+                vlla_xpos = 60
+                repeat = 0
+                judging = True
+
         if SCROLL:
             xpos -= scroll_rate * dt
 
             if xpos + text.get_width () < 0:
-                if repeat == 0:
-                    xpos = WIDTH
-                    repeat = 1
-                else:
-                    xpos = WIDTH
-                    repeat = 0
-                    judging = True
-        else:
-            if now - round_start > 3:
-                judging = True
+                xpos = WIDTH
 
     process_input ()
 
     draw ()
 
     if os.path.getatime (feedfile) > os.path.getmtime (feedfile):
-        pygame.image.save (screen, feedfile)
+        pygame.image.save (vlla, feedfile)
 
     last_time = time.time ()
