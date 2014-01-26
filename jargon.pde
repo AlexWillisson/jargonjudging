@@ -8,9 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-Serial vlla_serial;
+Serial vlla_serial0, vlla_serial1;
 boolean layout;
-PImage vlla_img;
+PImage vlla_img0, vlla_img1;
 int errorCount = 0;
 float framerate = 0;
 
@@ -25,6 +25,8 @@ void setup() {
     println("Serial Ports List:");
     println(list);
     // serialConfigure("/dev/pts/4");
+    serialConfigure("/dev/ttyACM0");
+    serialConfigure("/dev/ttyACM1");
     if (errorCount > 0) exit();
     size(60, 26);
     first = true;
@@ -137,8 +139,10 @@ void draw() {
     data[2] = (byte) (usec >> 8);
 
     try {
+	println ("foo");
 	vlla_serial.write (data);
     } catch (Exception e) {
+	println ("bar");
 	return;
     }
 }
