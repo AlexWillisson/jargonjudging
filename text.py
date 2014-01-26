@@ -2,22 +2,32 @@
 
 import pygame, time, sys, random, os
 
-WIDTH = 60
-HEIGHT = 26
+if True:
+    SCALE = 1
+    WIDTH = 60
+    HEIGHT = 26
+    FONTSIZE = 26
+    SCROLL = True
+else:
+    SCALE = 30
+    WIDTH = 60 * SCALE
+    HEIGHT = 26 * SCALE
+    FONTSIZE = 240
+    SCROLL = False
 
 def draw ():
-    global text, xpos, judging, judges, redx
+    global text, xpos, ypos, judging, judges, redx, SCALE
 
     screen.fill ((0, 0, 0))
 
     if judging:
-#        screen.blit (judge110, (0, 0))
         for idx in range (len (judges)):
             if judges[idx]:
-                screen.blit (redx, (idx * 20, 0))
+                screen.blit (pygame.transform.scale (redx,
+                                                     (20 * SCALE, 26 * SCALE)),
+                             (idx * 20 * SCALE, 0))
     else:
-        screen.blit (text, (xpos, 0))
-
+        screen.blit (text, (xpos, ypos))
 
     pygame.display.flip ()
 
@@ -52,10 +62,19 @@ def fetch_word ():
     return nouns[idx]
         
 def next_word ():
-    global judging, text
+    global judging, text, round_start, xpos, ypos, judges
 
     judging = False
+    judges = [0, 0, 0]
+    round_start = time.time ()
     text = font.render (fetch_word (), 0, (255, 255, 255))
+
+    if SCROLL:
+        xpos = WIDTH
+        ypos = (HEIGHT / 2) - (text.get_height() / 2)
+    else:
+        xpos = (WIDTH / 2) - (text.get_width () / 2)
+        ypos = (HEIGHT / 2) - (text.get_height() / 2)
 
 f = open ("nouns", "r")
 contents = f.read ()
@@ -77,38 +96,45 @@ last_time = time.time ()
 paused = True
 
 font = pygame.font.Font ("/usr/share/fonts/opentype/freefont/FreeSansBold.otf",
-                         26)
-xpos = 60
+                         FONTSIZE)
+xpos = WIDTH
+ypos = HEIGHT / 2
 
-scroll_rate = 100
+scroll_rate = 100 * (WIDTH / 60)
 repeat = 0
 judging = False
 feedfile = "feed.png"
 
 judges = [0, 0, 0]
 
-judge110 = pygame.image.load ("judge110.png")
 redx = pygame.image.load ("x.png")
 
-text = font.render (fetch_word (), 0, (255, 255, 255))
+next_word ()
+round_start = time.time ()
 
 while True:
     t = framestep - (time.time () - last_time)
     if t > 0:
         time.sleep (t)
 
-    dt = time.time () - last_time
+    now = time.time ()
+
+    dt = now - last_time
 
     if not judging:
-        xpos -= scroll_rate * dt
+        if SCROLL:
+            xpos -= scroll_rate * dt
 
-        if xpos + text.get_width () < 0:
-            if repeat == 0:
-                xpos = 60
-                repeat = 1
-            else:
-                xpos = 60
-                repeat = 0
+            if xpos + text.get_width () < 0:
+                if repeat == 0:
+                    xpos = WIDTH
+                    repeat = 1
+                else:
+                    xpos = WIDTH
+                    repeat = 0
+                    judging = True
+        else:
+            if now - round_start > 3:
                 judging = True
 
     process_input ()
